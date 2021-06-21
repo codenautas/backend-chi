@@ -1,0 +1,67 @@
+{
+  "name": "backend-chi",
+  "version": "0.0.6",
+  "description": "The flowing backend",
+  "main": "dist/server/server/be-index.js",
+  "types": "dist/server/server/be-index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "backend-plus": "^1.10.3",
+    "best-globals": "~0.10.32",
+    "json4all": "^1.1.0",
+    "like-ar": "^0.3.5",
+    "material-styles": "~0.0.7",
+    "mini-tools": "~1.11.1",
+    "pg-triggers": "~0.3.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-redux": "^7.2.4",
+    "redux": "^4.1.0",
+    "redux-typed-reducer": "~0.1.1",
+    "source-map-loader": "^3.0.0",
+    "webpack": "^5.39.1",
+    "webpack-cli": "^4.7.2"
+  },
+  "devDependencies": {
+    "@material-ui/core": "~4.11.4",
+    "@material-ui/icons": "~4.11.2",
+    "@material-ui/lab": "^4.0.0-alpha.58",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^15.12.4",
+    "@types/react": "^17.0.11",
+    "@types/react-dom": "^17.0.8",
+    "@types/react-redux": "^7.1.16",
+    "mixin-patch": "~0.3.6",
+    "mocha": "^9.0.1",
+    "pg-promise-strict": "^1.2.4",
+    "types.d.ts": "^0.6.3",
+    "typescript": "^4.3.4"
+  },
+  "mixin-patch": {
+    "patch": false,
+    "copy": [
+      {
+        "from": "src/client",
+        "to": "dist/client/client"
+      }
+    ]
+  },
+  "scripts": {
+    "prepare-server-1": "tsc -p src/server",
+    "prepare-server": "tsc -p src/server  &&  mixin-patch",
+    "prepare": "tsc -p src/server && tsc -p src/client &&  mixin-patch",
+    "build-cli": "tsc -p src/client && mixin-patch",
+    "build-test": "tsc -p src/test && mixin-patch",
+    "watch:buildC": "tsc -p tsconfig-client.json --watch",
+    "watch:buildS": "tsc -p tsconfig-server.json --watch",
+    "watch:buildU": "tsc -p tsconfig-unlogged.json --watch",
+    "xtest": "mocha --reporter spec --bail --check-leaks test/",
+    "test": "tsc -p src/test && mocha dist/test/test.js",
+    "working": "tsc -p src/client && mixin-patch",
+    "dump": "npm start -- --dump-db",
+    "dumpb": "(tsc -p tsconfig-server.json  || echo \"continue w/error\") && npm run dump",
+    "mixin-patch": "mixin-patch"
+  }
+}

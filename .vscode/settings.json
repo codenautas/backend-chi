@@ -1,0 +1,4 @@
+{
+    "window.title": "氣 ${dirty}${separator}${rootName}${separator}${activeEditorMedium}",
+    "typescript.tsdk": "node_modules\\typescript\\lib"
+}
