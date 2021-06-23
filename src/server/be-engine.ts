@@ -4,6 +4,7 @@ import {strict as likeAr} from "like-ar";
 import * as json4all from "json4all";
 import {promises as fs} from "fs";
 import * as Path from "path";
+import * as MiniTools from "mini-tools";
 
 export type TableDefinitionPrivateProperties = {
     sql?:{
@@ -60,6 +61,15 @@ export function generateTableDefinition(tableDef:TableDefinition<any, any>|RowDe
     }
 }
 
+export type UnloggedService = {
+    coreFunction: (params:any)=>Promise<{html:string}>
+}
+
+type FieldsOf<T> = T extends TableDefinition<infer PublicFields, infer PrivateFields> ? PublicFields & PrivateFields : T extends RowDefinition<infer Field> ? Field : never;
+type TsDirectType<F> = F extends Field<infer T> ? T : never
+type TsDirectTypes<F extends {}> = {[K in keyof F]: TsDirectType<F[K]>} 
+export type TsObjectBe<T> = TsDirectTypes<FieldsOf<T>>
+
 export class BackendEngine extends Engine{
     staticIncludes:BP.ClientModuleDefinition[]=[]
     getTableDefinition():{[k:string]:(context:BP.TableContext)=>BP.TableDefinition}{
@@ -67,6 +77,11 @@ export class BackendEngine extends Engine{
     }
     getIncludes():BP.ClientModuleDefinition[]{
         return this.staticIncludes
+    }
+    getUnloggedServices():{
+        [name:string]: UnloggedService
+    }{
+        return {}
     }
     async getIncludesFromDataSetRow(basePath:string, commonPath:string, dataSetRow:{[name:string]:RowDefinition<any>}){
         var seen:{[name:string]:boolean} = {}
@@ -90,6 +105,20 @@ export class BackendEngine extends Engine{
         return chain;
     }
     async asyncPostConfig(){}
+    async getTableData<T extends RowDefinition<any>>(tableDef:T, fixedFields:{fieldName:string, value:any}[]):Promise<TsObjectBe<T>[]>{
+        var req = {user:{}} as BP.Request 
+        var context = this.bp.getContext(req) as BP.ProcedureContext;
+        var result = this.bp.inTransaction(req, (client:BP.Client)=>{
+            context.client=client;
+            return this.bp.procedure.table_data.coreFunction(context, {
+                table:tableDef.name, 
+                fixedFields
+            });
+        });
+        return result;
+    }
+    // @ts-ignore
+    private bp:BP.AppBackend
 }
 
 type InnerSession = {
@@ -107,22 +136,27 @@ export class AppChi extends BP.AppBackend{
     override async postConfig(){
         await super.postConfig();
         await this.engine.asyncPostConfig();
+        // @ts-ignore
+        this.engine.bp = this;
+        /*
+        this.engine.dbConn=(_session:null)=>({
+            inTransaction:<T>(f:(client:BP.Client)=>Promise<T>)=>this.inTransaction(null,f)
+        })
+        */
     }
-    /*
-    addSchrödingerServices(mainApp:ExpressPlus, baseUrl:string){
-        var be=this;
+    override addSchrödingerServices(mainApp:BP.ExpressPlus, baseUrl:string){
         if(baseUrl=='/'){
             baseUrl='';
-        }   
-        mainApp.get(baseUrl+'/pub',async function(req,res,_next){
-            // @ts-ignore useragent existe
-            var {useragent} = req;
-            var htmlMain=be.mainPage({useragent}, false, {skipMenu:true}).toHtmlDoc();
-            MiniTools.serveText(htmlMain,'html')(req,res);
-        });
+        }
+        likeAr(this.engine.getUnloggedServices()).forEach((service, name)=>{
+            mainApp.get(baseUrl+'/'+name,async (req,res,_next)=>{
+                var {query} = req;
+                var {html} = await service.coreFunction(query);
+                MiniTools.serveText(html,'html')(req,res);
+            });
+        })
         super.addSchrödingerServices(mainApp, baseUrl);
     }
-    */
     override async getProcedures(){
         var be = this;
         var engineProcedures=likeAr(this.engine.publicMethods).map((def,name)=>(

@@ -58,6 +58,7 @@ type CommonFieldOptions<T> = {
         delete?:boolean
     }
     registerAsDetail?:Partial<BP.DetailTable> & {abr:string}
+    isName?:boolean
 }
 
 export abstract class Field<T> {
@@ -247,6 +248,13 @@ export function rowDefinition<Fields extends {[k:string]:Field<any>}>(tableDef:R
     tableDef.foreignKeys = calculateFkAndCompleteDetails(tableDef.field, tableDef);
     return tableDef;
 }
+
+
+type FieldsOf<T> =T extends RowDefinition<infer Field> ? Field : never;
+type TsDirectType<F> = F extends Field<infer T> ? T : never
+type TsDirectTypes<F extends {}> = {[K in keyof F]: TsDirectType<F[K]>} 
+export type TsObject<T> = TsDirectTypes<FieldsOf<T>>
+
 
 export class Engine{
     static defaultPublicMethods:{[name:string]:PublicMethod}={};

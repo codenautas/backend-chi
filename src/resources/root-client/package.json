@@ -1,0 +1,10 @@
+{
+  "name": "frontend-chi",
+  "version": "0.0.8",
+  "description": "The flowing frontend",
+  "main": "client/fe-index.js",
+  "types": "client/fe-index.d.ts",
+  "files": [
+    "client", "common", "unlogged"
+  ]
+}  
