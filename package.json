@@ -1,6 +1,6 @@
 {
   "name": "backend-chi",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "The flowing backend",
   "main": "dist/server/server/be-index.js",
   "types": "dist/server/server/be-index.d.ts",

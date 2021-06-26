@@ -59,6 +59,7 @@ type CommonFieldOptions<T> = {
     }
     registerAsDetail?:Partial<BP.DetailTable> & {abr:string}
     isName?:boolean
+    defaultDbValue?:string
 }
 
 export abstract class Field<T> {
