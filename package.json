@@ -1,6 +1,6 @@
 {
   "name": "backend-chi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The flowing backend",
   "main": "dist/server/server/be-index.js",
   "types": "dist/server/server/be-index.d.ts",
@@ -38,6 +38,9 @@
     "pg-promise-strict": "^1.2.4",
     "types.d.ts": "^0.6.3",
     "typescript": "^4.3.4"
+  },
+  "engines": {
+    "node": ">=14.17.0"
   },
   "mixin-patch": {
     "patch": false,
