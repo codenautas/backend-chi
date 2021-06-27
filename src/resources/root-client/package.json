@@ -1,6 +1,6 @@
 {
   "name": "frontend-chi",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "The flowing frontend",
   "main": "client/fe-index.js",
   "types": "client/fe-index.d.ts",

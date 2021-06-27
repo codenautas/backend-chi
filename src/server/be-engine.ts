@@ -63,6 +63,7 @@ export function generateTableDefinition(tableDef:TableDefinition<any, any>|RowDe
 
 export type UnloggedService = {
     coreFunction: (params:any)=>Promise<{html:string}>
+    addParam?:{url?:boolean}
 }
 
 type FieldsOf<T> = T extends TableDefinition<infer PublicFields, infer PrivateFields> ? PublicFields & PrivateFields : T extends RowDefinition<infer Field> ? Field : never;
@@ -151,7 +152,13 @@ export class AppChi extends BP.AppBackend{
         likeAr(this.engine.getUnloggedServices()).forEach((service, name)=>{
             mainApp.get(baseUrl+'/'+name,async (req,res,_next)=>{
                 var {query} = req;
-                var {html} = await service.coreFunction(query);
+                var params = query;
+                console.log('serving',name,req.query,service?.addParam?.url)
+                if(service?.addParam?.url){
+                    console.log('req.originalUrl',req.originalUrl)
+                    params.url = req.headers.host + req.originalUrl;
+                }
+                var {html} = await service.coreFunction(params);
                 MiniTools.serveText(html,'html')(req,res);
             });
         })
