@@ -63,6 +63,7 @@ type CommonFieldOptions<T> = {
     inTable?:boolean
     clientSide?:string
     serverSide?:boolean
+    fkOptions?:Omit<BP.ForeignKey,'references'|'fields'>
 }
 
 export abstract class Field<T> {
@@ -166,8 +167,12 @@ export class timestamp extends Field<BestGlobals.DateTime>{
     }
 }
 
-export function relatedField<Base, TC extends Field<Base>>(field:TC, def:CommonFieldOptions<Base>):TC{
+export function foreignKeyField<Base, TC extends Field<Base>>(field:TC, def:CommonFieldOptions<Base>):TC{
     return field.clone(def) as TC;
+}
+
+export function foreignField<Base, TC extends Field<Base>>(field:TC, def:CommonFieldOptions<Base>):TC{
+    return field.clone({...def, inTable:false}) as TC;
 }
 
 export const field = {
@@ -197,6 +202,7 @@ export type RowDefinition<Fields extends {[k:string]:Field<any>}> = RowDefinitio
     primaryKey:(keyof Fields & string)[] // no debería ser necesario poner `& string`
     foreignKeys?:{references:string, fields:(keyof Fields & string|{source:keyof Fields & string, target:string})[]}[]
     detailTables?:BP.DetailTable[]
+    hiddenColumns?: (keyof Fields & string)[]
 }
 
 export function completeField(fields:RowDefinition<any>["field"], tableDef:RowDefinition<any>, moreProps:{}){
@@ -212,19 +218,26 @@ export function calculateFkAndCompleteDetails(allField:RowDefinition<any>["field
         [k:string]: {
             fields:Field<any>[]
             registerAsDetail:CommonFieldOptions<any>["registerAsDetail"]
-            refTable:RowDefinition<any>
+            refTable:RowDefinition<any>,
+            fkOptions:Omit<BP.ForeignKey,'fields'>
         }
     }
-    likeAr(allField).forEach((field:Field<any>)=>{
+    likeAr(allField).forEach((field:Field<any>, fieldName)=>{
         if(field.refTable){
             if(!preparingFK[field.refTable.name]){
                 preparingFK[field.refTable.name] = {
                     fields: [], 
                     registerAsDetail: field.inner.registerAsDetail,
-                    refTable: field.refTable
+                    refTable: field.refTable,
+                    fkOptions: {references:field.refTable.name, ...field.inner.fkOptions}
                 };
             }
-            preparingFK[field.refTable.name].fields.push(field)
+            if(field.inner.inTable!==false){
+                preparingFK[field.refTable.name].fields.push(field)
+            }else{
+                preparingFK[field.refTable.name].fkOptions.displayFields = preparingFK[field.refTable.name].fkOptions.displayFields || []
+                preparingFK[field.refTable.name].fkOptions.displayFields?.push(field.refName || fieldName as string);
+            }
         }
     })
     var foreignKeys:BP.ForeignKey[] = tableDef.foreignKeys||[];
@@ -239,7 +252,7 @@ export function calculateFkAndCompleteDetails(allField:RowDefinition<any>["field
                 info.refTable.detailTables.push(newDetail);
             }
         }
-        var nuevaFk = {references:target as string, fields, alias:target as string};
+        var nuevaFk = {fields, alias:target as string, ...info.fkOptions};
         if(foreignKeys.filter(fk=>(fk.alias == nuevaFk.alias && JSON.stringify(fk.fields) == JSON.stringify(nuevaFk.fields) && fk.references == fk.references)).length==0){
             foreignKeys.push(nuevaFk)
         }
