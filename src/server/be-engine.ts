@@ -105,6 +105,10 @@ export class BackendEngine extends Engine{
         })
         return chain;
     }
+    async errorPageAndCode(err:Error){
+        console.log(err);
+        return {code:404, html:`<h2>ERROR 404. Recurso no encontrado</h2>`}
+    }
     async asyncPostConfig(){}
     async getTableData<T extends RowDefinition<any>>(tableDef:T, fixedFields:{fieldName:string, value:any}[]):Promise<TsObjectBe<T>[]>{
         var req = {user:{}} as BP.Request 
@@ -151,17 +155,24 @@ export class AppChi extends BP.AppBackend{
         }
         likeAr(this.engine.getUnloggedServices()).forEach((service, name)=>{
             mainApp.get(baseUrl+'/'+name,async (req,res,_next)=>{
-                var {query} = req;
-                var params = query;
-                console.log('serving',name,req.query,service?.addParam?.url)
-                if(service?.addParam?.url){
-                    params.url = req.headers.host + req.originalUrl;
+                try{
+                    var {query} = req;
+                    var params = query;
+                    console.log('Serving',name,req.query,service?.addParam?.url)
+                    if(service?.addParam?.url){
+                        params.url = req.headers.host + req.originalUrl;
+                    }
+                    if(service?.addParam?.mainDomain){
+                        params.mainDomain = this.config.server.mainDomain;
+                    }
+                    var {html} = await service.coreFunction(params);
+                    MiniTools.serveText(html,'html')(req,res);
+                }catch(err){
+                    console.log(err)
+                    var {html, code} = await this.engine.errorPageAndCode(err);
+                    res.status(code).send(html);
+                    res.end();
                 }
-                if(service?.addParam?.mainDomain){
-                    params.mainDomain = this.config.server.mainDomain;
-                }
-                var {html} = await service.coreFunction(params);
-                MiniTools.serveText(html,'html')(req,res);
             });
         })
         super.addSchrödingerServices(mainApp, baseUrl);
