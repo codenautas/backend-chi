@@ -6,13 +6,9 @@ import {promises as fs} from "fs";
 import * as Path from "path";
 import * as MiniTools from "mini-tools";
 
-export type TableDefinitionPrivateProperties = {
-    sql?:{
-        isTable?:boolean
-        from?:string
-    }
-    dynamicAdapt?:(tableDefinition:BP.TableDefinition, context:BP.TableContext)=>BP.TableDefinition
-}
+export type TableDefinitionPrivateProperties = Pick<BP.TableDefinition, 'sql'> & {
+    dynamicAdapt?: (tableDefinition: BP.TableDefinition, context: BP.TableContext) => BP.TableDefinition;
+};
 
 export type TableDefinition<Fields extends {[k:string]:Field<any>}, PrivateFields extends {[k:string]:Field<any>}> = 
     RowDefinition<Fields> & TableDefinitionPrivateProperties 
