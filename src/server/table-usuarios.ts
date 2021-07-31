@@ -11,6 +11,8 @@ const campos = {
 export const tableUsuarios = tableDefinition(
     usuarios, campos, {
         dynamicAdapt:(tableDef:TableDefinition, context:TableContext)=>{
+            var chPassField = tableDef.fields.find(field=>field.name=='clave_nueva')!;
+            chPassField.allow!.select = context.user.rol==='admin';
             tableDef.sql||={};
             tableDef.sql.where =context.user.rol==='admin' || context.forDump?'true':"usuario = "+context.be.db.quoteNullable(context.user.usuario)
             return tableDef;

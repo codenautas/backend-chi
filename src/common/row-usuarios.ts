@@ -11,6 +11,7 @@ const campos = {
     telefono      : new field.text({title:'teléfono'}),
     mail          : new field.text({}),
     mail_alternativo: new field.text({}),
+    clave_nueva   : new field.text({clientSide:'newPass', allow:{select:false, update:true, insert:false}}),
 }
 
 export const usuarios = rowDefinition({
