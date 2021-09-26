@@ -1,4 +1,6 @@
-import { Engine, Field, RowDefinition, SessionId, completeField, calculateFkAndCompleteDetails } from "../common/engine"
+import { Engine, Field, RowDefinition, SessionId, completeField, calculateFkAndCompleteDetails,
+    unexpectedError
+} from "../common/engine"
 import * as BP from "backend-plus";
 import {strict as likeAr} from "like-ar";
 import * as json4all from "json4all";
@@ -59,7 +61,7 @@ export function generateTableDefinition(tableDef:TableDefinition<any, any>|RowDe
 
 export type UnloggedService = {
     coreFunction: (params:any)=>Promise<{html:string}>
-    addParam?:{url?:boolean, mainDomain?:boolean}
+    addParam?:{url?:boolean, mainDomain?:boolean, devel:boolean}
 }
 
 type FieldsOf<T> = T extends TableDefinition<infer PublicFields, infer PrivateFields> ? PublicFields & PrivateFields : T extends RowDefinition<infer Field> ? Field : never;
@@ -161,11 +163,14 @@ export class AppChi extends BP.AppBackend{
                     if(service?.addParam?.mainDomain){
                         params.mainDomain = this.config.server.mainDomain;
                     }
+                    if(service?.addParam?.devel){
+                        params.devel = this.config.devel;
+                    }
                     var {html} = await service.coreFunction(params);
                     MiniTools.serveText(html,'html')(req,res);
                 }catch(err){
-                    console.log(err)
-                    var {html, code} = await this.engine.errorPageAndCode(err);
+                    var error = unexpectedError(err);
+                    var {html, code} = await this.engine.errorPageAndCode(error);
                     res.status(code).send(html);
                     res.end();
                 }

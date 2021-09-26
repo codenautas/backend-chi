@@ -13,6 +13,22 @@ if(!('json4allSpace' in currentGlobalScope)){
     currentGlobalScope.json4allSpace = json4allSpace;
 }
 
+export function expectedError<T extends Error>(err:unknown):T{
+    if(err instanceof Error) return err as T;
+    console.error('expectedError, but err is not an Error',err);
+    // @ts-ignore
+    return err.message?err:{message:err}
+}
+
+
+export function unexpectedError<T extends Error>(err:unknown):T{
+    console.error('unexpectedError',err);
+    if(err instanceof Error) return err as T;
+    console.error('And err is not an Error');
+    // @ts-ignore
+    return err.message?err:{message:err}
+}
+
 export type PublicMethod<Name extends string='method1'|'method2'> = ({className:'global'} | {className:Name, idLength:number} ) & {sessionId?:boolean}
 
 export type SessionId = 'S.101010101'|'P.303030303'|'etc...'
