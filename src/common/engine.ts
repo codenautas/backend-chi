@@ -188,7 +188,7 @@ export function foreignKeyField<Base, TC extends Field<Base>>(field:TC, def:Comm
 }
 
 export function foreignField<Base, TC extends Field<Base>>(field:TC, def:CommonFieldOptions<Base>):TC{
-    return field.clone({...def, inTable:false}) as TC;
+    return field.clone({editable:false, isPk:undefined, nullable:undefined, ...def, inTable:false}) as TC;
 }
 
 export const field = {

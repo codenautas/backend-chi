@@ -7,6 +7,7 @@ import * as json4all from "json4all";
 import {promises as fs} from "fs";
 import * as Path from "path";
 import * as MiniTools from "mini-tools";
+import * as serveContent from "serve-content";
 
 export type TableDefinitionPrivateProperties = Pick<BP.TableDefinition, 'sql'> & {
     dynamicAdapt?: (tableDefinition: BP.TableDefinition, context: BP.TableContext) => BP.TableDefinition;
@@ -41,6 +42,7 @@ export function generateTableDefinition(tableDef:TableDefinition<any, any>|RowDe
             return {
                 name: name as string, 
                 typeName: def.typeName, 
+                ...(def.default ? {defaultValue: def.default, defaultDbValue:def.default} : {} ),
                 ...def.definition,
                 allow:{
                     ...def.definition.allow,
@@ -62,7 +64,9 @@ export function generateTableDefinition(tableDef:TableDefinition<any, any>|RowDe
 export type UnloggedService = {
     coreFunction: (params:any)=>Promise<{html:string}>
     addParam?:{url?:boolean, mainDomain?:boolean, devel:boolean}
-}
+} 
+export type StaticContent = {public:true, args:Parameters<typeof serveContent>}
+export type StaticContentObject<T extends string = string> = {[k in T]:StaticContent}
 
 type FieldsOf<T> = T extends TableDefinition<infer PublicFields, infer PrivateFields> ? PublicFields & PrivateFields : T extends RowDefinition<infer Field> ? Field : never;
 type TsDirectType<F> = F extends Field<infer T> ? T : never
@@ -80,6 +84,9 @@ export class BackendEngine extends Engine{
     getUnloggedServices():{
         [name:string]: UnloggedService
     }{
+        return {}
+    }
+    getStaticContent():StaticContentObject {
         return {}
     }
     async getIncludesFromDataSetRow(basePath:string, commonPath:string, dataSetRow:{[name:string]:RowDefinition<any>}){
@@ -176,6 +183,11 @@ export class AppChi extends BP.AppBackend{
                 }
             });
         })
+        likeAr(this.engine.getStaticContent()).forEach((content, name)=>{
+            if(content.public){
+                mainApp.use(baseUrl+'/'+name,serveContent(...content.args));
+            }
+        });
         super.addSchrödingerServices(mainApp, baseUrl);
     }
     override async getProcedures(){
